@@ -27,7 +27,7 @@
 
 % Custom varibles
 \def\myProjectName{NTUT Furniture}
-\def\myVersion{2.4}
+\def\myVersion{3.0}
 
 % Font Size
 \newcommand\TwentyTitle{\fontsize{20pt}{24pt}\selectfont}
@@ -128,7 +128,7 @@
 \end{enumerate}
 後端子元件：
 \begin{enumerate}
-  \item 留言控制器(Commment controller, CC)
+  \item 留言控制器(Comment controller, CC)
   \item 商品控制器(Product controller, PC)
   \item 商店控制器(Shop controller, SC)
   \item 訂單控制器(Order controller, OC)
@@ -141,7 +141,7 @@
 
 在前端方面採用HTMX。HTMX 是一個JavaScript函式庫，簡化了建立互動式Web應用的過程，保持了HTML的簡潔性；在後端方面，選擇Python作為主要的後端程式語言，並使用FastAPI框架來建構的API。FastAPI以其出色的性能和文檔生成功能而聞名，使得開發和維護API變得更加容易和高效。
 
-在數據庫部分採用Mysql。Google的GCP提供與SQL Server的無縫整合，利用基於雲的資源以提高性能和擴展性，加速團隊開發流程。
+在數據庫部分採用Mysql。使用docker-compose 來加速開發流程。
 
 \subsection{符號描述 (Notation Description)}
 
@@ -474,7 +474,7 @@
         \hline
         \textbf{Requirement} & \textbf{Description} \\
         \hline
-        OFSS-O-01 & 使用GCP建置 database和部署應用程式 \\
+        OFSS-O-01 & 使用docker-compose建置 database和部署應用程式 \\
         \hline
     \end{tabular}
     \caption{System Requirements and Descriptions}
