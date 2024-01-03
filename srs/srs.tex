@@ -4,7 +4,8 @@
 \graphicspath{ {./image/} }
 \usepackage{xeCJK}
 \usepackage{verbatim}
-
+\usepackage{geometry}
+\usepackage{listings}
 %% Font
 \CJKfontspec{Noto Serif CJK TC} % 思源宋體
 
@@ -27,7 +28,7 @@
 
 % Custom varibles
 \def\myProjectName{NTUT Furniture}
-\def\myVersion{3.0}
+\def\myVersion{4.0}
 
 % Font Size
 \newcommand\TwentyTitle{\fontsize{20pt}{24pt}\selectfont}
@@ -70,7 +71,7 @@
     \vspace{2cm}
     {\SixteenTitle Department of Computer Science \& Information Engineering National Taipei University of Technology \par}
     \vspace{16pt}
-    {\SixteenTitle 11/22/2023 \par}
+    {\SixteenTitle 12/28/2023 \par}
 \end{center}
 \clearpage
 
@@ -437,29 +438,42 @@
         \hline
         \textbf{Requirement} & \textbf{Description} \\
         \hline
-        OFSS-I-01 & MMS 能在 SMS 新增、更新與停用帳號取及取得商店營業資訊(e.g. 營業收入) \\
+        OFSS-I-01 & AP 能查看帳號資訊 \\
         \hline
-        OFSS-I-02 & MMS 能在 AMS 新增、更新與停用帳號及取得顧客資料  \\
+        OFSS-I-02 & AP 能查看商店營業資訊(e.g. 營業收入)  \\
         \hline
-        OFSS-I-03 & SMS 能和 OLMS 交換訂單資料 \\
+        OFSS-I-03 & DP 能查看帳號 \\
         \hline
-        OFSS-I-04 & SMS 能和 AMS 交換顧客資料 \\
+        OFSS-I-04 & DP 能查看商店 \\
         \hline
-        OFSS-I-05 & SMS 能和 CSMS 交換評價資訊 \\
+        OFSS-I-05 & DP 能查看訂單 \\
         \hline
-        OFSS-I-06 & AMS 能在 SMS 新增及更新商店 \\
+        OFSS-I-06 & DP 能查看訂閱 \\
         \hline
-        OFSS-I-07 & AMS 能和 CSMS 交換評價資料 \\
+        OFSS-I-07 & SP 能查看商品 \\
         \hline
-        OFSS-I-08 & AMS 能在 OLMS 取得訂單資訊 \\
+        OFSS-I-08 & SP 能查看商店 \\
         \hline
-        OFSS-I-09 & SCMS 能在 AMS 交換顧客資訊 \\
+        OFSS-I-09 & SP 能查看訂閱 \\
         \hline
-        OFSS-I-10 & SCMS 能在 SMS 取得商家資訊 \\
+        OFSS-I-11 & MP 能顯示所有商品 \\
         \hline
-        OFSS-I-11 & SCMS 能在 OLMS 新增訂單\\
+        OFSS-I-12 & MP 能篩選所有商品 \\
         \hline
-        
+        OFSS-I-13 & SCI 能加入商品 \\
+        \hline
+        OFSS-I-14 & SCI 能送出訂單 \\
+        \hline
+        OFSS-I-15 & SCI 能使用coupon \\
+        \hline
+        OFSS-I-16 & PP 能查看商品 \\
+        \hline
+        OFSS-I-17 & PP 能查看評論 \\
+        \hline
+        OFSS-I-18 & PP 能按讚評論 \\
+        \hline
+        OFSS-I-19 & LP 能登入 \\
+        \hline
     \end{tabular}
     \caption{System Requirements and Descriptions}
     \label{tab:system-requirements}
@@ -482,16 +496,173 @@
 \end{table}
 
 \newpage
+\section{資料庫的概念設計(Conceptual Design of the Database)}
 \subsection{實體關係模型 (Entity Relationship ER Model)}
-\includegraphics[scale=0.35]{image/nft_er_diagram.png}
+\includegraphics[scale=0.35]{image/er_diagram.png}
 \newpage
-\subsection{邏輯資料庫綱要 (Database Schema)}
-\includegraphics[scale=0.7]{image/nft_database_schema.png}
-\subsubsection{符號描述(Notation Description)}
-\begin{itemize}
-    \item any `NN' behind domain type indicates `not null'
-    \item a key sign after attribute indicates `primary key'
-\end{itemize}
+\section{邏輯資料庫架構(Logical Database Schema)}
+\subsection{資料庫架構(Database Schema)}
+\includegraphics[scale=0.7]{image/schema.png}
+\newpage
+\subsection{資料定義語言(DLL)}
+\begin{verbatim}
+
+-- auto-generated definition
+create table Account
+(
+    account_uuid varchar(64)                          not null
+        primary key,
+    name         varchar(64)                          not null,
+    email        varchar(128)                         not null,
+    pwd          varchar(128)                         not null,
+    phone        varchar(32)                          null,
+    credit_card  varchar(64)                          null,
+    birthday     date                                 null,
+    address      varchar(256)                         null,
+    is_active    tinyint(1) default 1                 null,
+    role         int        default 0                 null,
+    update_time  timestamp  default CURRENT_TIMESTAMP null 
+    on update CURRENT_TIMESTAMP,
+    constraint Account_pk
+        unique (email)
+);
+
+-- auto-generated definition
+create table Comment
+(
+    comment_uuid varchar(64)                         not null
+        primary key,
+    product_uuid varchar(64)                         not null,
+    account_uuid varchar(64)                         not null,
+    text         varchar(512)                        not null,
+    update_time  timestamp default CURRENT_TIMESTAMP null
+    on update CURRENT_TIMESTAMP,
+    constraint Comment_ibfk_1
+        foreign key (product_uuid) references Product (product_uuid),
+    constraint Comment_ibfk_2
+        foreign key (account_uuid) references Account (account_uuid)
+);
+
+-- auto-generated definition
+create table Coupon
+(
+    coupon_uuid varchar(64)                         not null
+        primary key,
+    coupon_code varchar(16)                         not null,
+    discount    int                                 not null,
+    expire_time timestamp                           not null,
+    update_time timestamp default CURRENT_TIMESTAMP null
+    on update CURRENT_TIMESTAMP,
+    check ((`discount` >= 0) and (`discount` <= 100))
+);
+
+-- auto-generated definition
+create table HateList
+(
+    account_uuid varchar(64) not null,
+    comment_uuid varchar(64) not null,
+    if_hates     tinyint(1)  not null,
+    primary key (account_uuid, comment_uuid),
+    constraint HateList_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint HateList_ibfk_2
+        foreign key (comment_uuid) references Comment (comment_uuid)
+);
+
+create index comment_uuid
+    on HateList (comment_uuid);
+
+-- auto-generated definition
+create table Product
+(
+    product_uuid varchar(64)                         not null
+        primary key,
+    shop_uuid    varchar(64)                         not null,
+    name         varchar(64)                         not null,
+    stock        int                                 not null,
+    price        int                                 not null,
+    tags         varchar(32)                         null,
+    description  varchar(512)                        null,
+    is_active    int       default 1                 null,
+    update_time  timestamp default CURRENT_TIMESTAMP null
+    on update CURRENT_TIMESTAMP,
+    constraint Product_ibfk_1
+        foreign key (shop_uuid) references Shop (shop_uuid)
+);
+
+-- auto-generated definition
+create table Shop
+(
+    shop_uuid    varchar(64)                         not null
+        primary key,
+    account_uuid varchar(64)                         not null,
+    name         varchar(64)                         not null,
+    description  varchar(512)                        null,
+    is_active    int       default 1                 null,
+    update_time  timestamp default CURRENT_TIMESTAMP null
+    on update CURRENT_TIMESTAMP,
+    constraint account_uuid
+        unique (account_uuid),
+    constraint Shop_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid)
+);
+
+-- auto-generated definition
+create table Subscription
+(
+    account_uuid varchar(64) not null,
+    shop_uuid    varchar(64) not null,
+    primary key (account_uuid, shop_uuid),
+    constraint Subscription_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint Subscription_ibfk_2
+        foreign key (shop_uuid) references Shop (shop_uuid)
+);
+
+-- auto-generated definition
+create table Transaction
+(
+    transaction_uuid varchar(64)                         not null
+        primary key,
+    account_uuid     varchar(64)                         not null,
+    shop_uuid        varchar(64)                         not null,
+    coupon_code      varchar(16)                         null,
+    receive_time     datetime                            null,
+    status           varchar(32)                         null,
+    order_time       timestamp default CURRENT_TIMESTAMP not null,
+    update_time      timestamp default CURRENT_TIMESTAMP not null 
+    on update CURRENT_TIMESTAMP,
+    constraint Transaction_ibfk_2
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint Transaction_ibfk_3
+        foreign key (shop_uuid) references Shop (shop_uuid),
+    constraint Receive_after_arrive_check
+        check ((`receive_time` is null) or (`status` = _latin1\'Arrived\')),
+	constraint Transaction_status_check
+		check (`status` in (_latin1\'Ordered\',_latin1\'Delivering\',_latin1\'Arrived\',_latin1\'Cancelled\'))
+);
+
+-- auto-generated definition
+create table TransactionProductLog
+(
+    transaction_uuid varchar(64)  not null,
+    product_uuid     varchar(64)  not null,
+    quantity         int unsigned not null,
+    constraint TransactionProductLog_ibfk_1
+        foreign key (transaction_uuid) references Transaction (transaction_uuid),
+    constraint TransactionProductLog_ibfk_2
+        foreign key (product_uuid) references Product (product_uuid)
+);
+
+
+\end{verbatim}
+
+
+
+\newpage
+\section{函數相依性與資料庫正規化(Functional Dependencies and Database Normalization)}
+\includegraphics[scale=0.7]{image/fd.png}
+\section{系統使用手冊(The User Guide of the System)}
 \subsection{Snapshots of Tables in DBMS}
 \subsubsection{Account Snapshot}
 \includegraphics[scale=0.4]{snapshots/account.png}
@@ -510,298 +681,468 @@
 \subsubsection{TransactionProductLog Snapshot}
 \includegraphics[scale=0.4]{snapshots/transactionProductLog.png}
 
-\subsection{SQL Create Statements}
-\begin{verbatim}
-create table `Account`(
-	account_uuid varchar(64) not null,
-	primary key (account_uuid),
-	name varchar(64) not null,
-	pwd varchar(128) not null,
-	image_url varchar(256) not null,
-	email varchar(128),
-	phone varchar(32),
-	credit_card varchar(64),
-	birthday datetime,
-	address varchar(256),
-	is_active tinyint(1),
-	update_time timestamp default NOW()
-);
-create table `Shop`(
-	shop_uuid varchar(64) not null,
-	primary key (shop_uuid),
-	account_uuid varchar(64) not null,
-	unique key (account_uuid),
-	foreign key (account_uuid) references Account(account_uuid),
-	name varchar(64) not null,
-	image_url varchar(256) not null,
-	description varchar(512),
-	update_time timestamp default NOW()
-);
-create table `Subscription`(
-	account_uuid varchar(64) not null,
-	shop_uuid varchar(64) not null,
-	foreign key (account_uuid) references Account(account_uuid),
-	foreign key (shop_uuid) references Shop(shop_uuid),
-	primary key (account_uuid, shop_uuid)
-);
-create table `Product`(
-	product_uuid varchar(64) not null,
-	primary key (product_uuid),
-	shop_uuid varchar(64) not null,
-	foreign key (shop_uuid) references Shop(shop_uuid),
-	name varchar(64) not null,
-	stock int not null,
-	image_url varchar(256) not null,
-	price int not null,
-	tags varchar(32) not null,
-	description varchar(512),
-	update_time timestamp default NOW()
-);
-create table `Comment`(
-	transaction_uuid varchar(64) not null,
-	foreign key (transaction_uuid) references Transaction(transaction_uuid),
-	account_uuid varchar(64) not null,
-	foreign key (account_uuid) references Account(account_uuid),
-	text varchar(512) not null,
-	likes int not null,
-	dislikes int not null,
-	update_time timestamp default NOW()
-);
-create table `Coupon`(
-	shop_uuid varchar(64) not null,
-	foreign key (shop_uuid) references Shop(shop_uuid),
-	discount int not null,
-	coupon_code varchar(16) not null,
-	expire_time datetime not null,
-	update_time timestamp default NOW()
-);
-create table Transaction(
-	transaction_uuid varchar(64) not null,
-	primary key (transaction_uuid),
-	shop_uuid varchar(64) not null,
-	foreign key (shop_uuid) references Shop(shop_uuid),
-	account_uuid varchar(64) not null,
-	foreign key (account_uuid) references Account(account_uuid),
-	coupon_code varchar(16),
-	receive_time datetime,
-	status varchar(32),
-	order_time timestamp default NOW()
-);
-create table `TransactionProductLog`(
-	transaction_uuid varchar(64) not null,
-	foreign key (transaction_uuid) references Transaction(transaction_uuid),
-	product_uuid varchar(64) not null,
-	foreign key (product_uuid) references Product(product_uuid),
-	quantity int not null
-);
-\end{verbatim}
-\subsection{SQL Insert Statements}
+\subsection{SQL Statements}
 \tiny
-\begin{verbatim}
-insert into NFT.Account (account_uuid, name, email, pwd, image_url, phone, credit_card, birthday, address, is_active, update_time)
-values  ('2dba33fc-345c-48e1-bdaa-62665648022b', 'gayrr', 't110590028@gmail.com',
- '$2b$12$g4aal9QhZbi9I1bepnCQv.IQCTBPiVDl9eX/2C3UOmPABg4EleV5O',
-  'https://example.com/bob.jpg', 'phone', 'jy;kjr;ggk;lfkdfk;lfwjkrefwjpp', '1933-11-28 00:00:00', null, 1, '2023-11-30 13:56:52'),
-        ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'fortesting', 'testing@gmail.com',
-         '$2b$12$Fi/i/rHJ8cRFng01pX4OKum/2QpIgH8fu8Yc/lNvqSgvad.vVfy7i',
-          'https://example.com/alice.jpg', '123456789', '1234-1234-1234-1234', '2023-12-04 18:33:29', '369 divine St, Taipei', 1, '2023-11-30 11:18:56'),
-        ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'fjsdlkjflkds', 'fdafv@gmail.com',
-         '$2b$12$5qitCd5.qoocUYozPp6oleXVNgsJ0jjPH1VfhvJCRRLYKgVP8rdAS',
-          'https://example.com/charlie.jpg', null, null, null, null, 1, '2023-11-30 11:19:19'),
-        ('4db0ab33-6b79-48f7-94e4-5db4b1cea8cb', 'jdsklf', 'fjdsklfjdskl@gmail.com',
-         'fjdsklfjfklsd', 'https://example.com/john.jpg', null, null, null, null, 1, '2023-12-05 16:54:29'),
-        ('51e2609f-2de1-4c42-ac4f-98c2c65cb392', 'i am not Garry', 'aasdg@gmail.com',
-         '$2b$12$8JTsSI1zh2i0l6NDA3tjSOO7m4pFSW8/LPJOvs821VQfPtM12LHsS',
-          'https://example.com/jane.jpg', null, null, null, null, 1, '2023-11-30 16:59:51'),
-        ('60356ee5-4258-4391-a739-11c924b3209a', 'dsjflkj', 'aasdvgg@gmail.com',
-         '$2b$12$HLhbWRJd7gt/F7Hc0fYOxuDDB7Ygxhpm.Ij6Ll5LZHxesSouaMi3q',
-          'https://example.com/bob.jpg', null, null, null, null, 1, '2023-11-30 11:20:30'),
-        ('76eafe7a-8d1d-11ee-bb92-42010aae0002', 'kyyyyyyyyyy', 'asd@gmail.com',
-         '$2b$12$qVG8oV1vpc/mjbN0ol2lYeRFRw4fr2eJbp7Ta8RjARWA5SkHICVqS',
-          'https://example.com/alice.jpg', '0955222444', null, '2077-07-07 00:00:00', null, 1, '2023-11-27 20:06:58'),
-        ('7f4d7718-9df9-48d5-92e2-678cfbf09a7b', 'gjfkldgjlkj', 'asdf@gmail.com',
-         '$2b$12$yJ7lpRrM0reofqj98eoJIuFygFzUP5Jy33fr2n5TIkSzW0JgsXUbi',
-          'https://example.com/charlie.jpg', null, null, null, null, 1, '2023-12-01 23:38:15'),
-        ('831cd0d0-8916-11ee-bb92-42010aae0002', 'notVincent', 'john.doe@gmail.com',
-         '$2b$12$u0UlZ0Eaq0Y.FmOPiAPQ1ux/Y9KCQrGJMYPGU11hPwHfixb9gwPey',
-          'https://example.com/john.jpg', '123-456-7890', '1234-5678-9012-3456', '1990-01-15 00:00:00', '123 Main St, Cityville', 1, '2023-11-22 17:07:07'),
-        ('831cdb41-8916-11ee-bb92-42010aae0002', 'gary', 'gjlksjlkdgg32f@gmail.com',
-         '$2b$12$LJNnAlmnPW/QmiOvDGVCUuXHO391NQ5.WbJh00.yo.eLakTrF9ikq',
-          'https://example.com/jane.jpg', 'ejgklgjdklffl21', 'fkl2lk1rklgnk', '2002-11-28 15:14:45', 'asd', 1, '2023-11-22 17:07:07'),
-        ('831cdd39-8916-11ee-bb92-42010aae0002', 'Bob Johnson', 'bob.johnson1@gmail.com',
-         '$2b$12$Shl8PhzNNNt.qamWUWOQtOw0mZW9UOEegYnRnKkCHKw4qPg.gxvty',
-          'https://example.com/dave.jpg', '555-123-4567', '4321-8765-0987-6543', '1978-03-10 00:00:00', '789 Pine St, Villagetown', 0, '2023-11-22 17:07:07'),
-        ('831cde2e-8916-11ee-bb92-42010aae0002', 'Alice Williams', 'alice.williams@gmail.com',
-         '$2b$12$0jaLxH5zkIZcPrLXnAqr4uJE4jdsOSOBya.OTgYzBUL.wiS1rAcBW',
-          'https://example.com/emily.jpg', '333-999-8888', '8765-4321-5678-9012', '1982-11-05 00:00:00', '567 Elm St, Hamletville', 1, '2023-11-22 17:07:07'),
-        ('831cdf1e-8916-11ee-bb92-42010aae0002', 'Charlie Brown', 'charlie.brown@gmail.com',
-         '$2b$12$Ct6e9IR6pH8/uAizZbf93eZ/E3VDSNfbUt6itjf0l1ung1n/ZPlu6',
-          'https://example.com/frank.jpg', '777-555-1234', '3456-7890-1234-5678', '1995-09-30 00:00:00', '234 Birch St, Riverside', 1, '2023-11-22 17:07:07'),
-        ('849c38d1-8916-11ee-bb92-42010aae0002', 'John Doe', 'john.1@gmail.com',
-         '$2b$12$o7YoV1XCBT1aYblWRPJchuoHUcsIpXj.G72rTJhl4pTIfV8NAoy.S',
-          'https://example.com/grace.jpg', '123-456-7890', '1234-5678-9012-3456', '1990-01-15 00:00:00', '123 Main St, Cityville', 1, '2023-11-22 17:07:10'),
-        ('849c3d7c-8916-11ee-bb92-42010aae0002', 'Jane Smith', 'jane.smith@gmail.com',
-         '$2b$12$WVr0/dD5IepeaF7Y5EKWNuOh4ZYHnYdzuZ8lexPdT/OGzylPS.Rau',
-          'https://example.com/hank.jpg', '987-654-3210', '9876-5432-1098-7654', '1985-07-22 00:00:00', '456 Oak St, Townsville', 1, '2023-11-22 17:07:10'),
-        ('849c3e36-8916-11ee-bb92-42010aae0002', 'Bob Johnson', 'bob.johnson@gmail.com',
-         '$2b$12$Shl8PhzNNNt.qamWUWOQtOw0mZW9UOEegYnRnKkCHKw4qPg.gxvty',
-          'https://example.com/irene.jpg', '555-123-4567', '4321-8765-0987-6543', '1978-03-10 00:00:00', '789 Pine St, Villagetown', 0, '2023-11-22 17:07:10'),
-        ('849c3eba-8916-11ee-bb92-42010aae0002', 'Monfjdskl', 'fdjkfldjlk@gmail.com',
-         '$2b$12$Bzk92.wdzsiJSky3X8qrMe4zZuMH/rhVms7ALcM8OkhGuF39pl/TS',
-          'https://example.com/kurt.jpg', '333-999-8888', '8765-4321-5678-9012', '1982-11-05 00:00:00', '567 Elm St, Hamletville', 1, '2023-11-22 17:07:10'),
-        ('849c3f2b-8916-11ee-bb92-42010aae0002', 'Dars Veda', '654675@gmail.com',
-         '$2b$12$Bzk92.wdzsiJSky3X8qrMe4zZuMH/rhVms7ALcM8OkhGuF39pl/TS',
-          'https://example.com/lucy.jpg', '777-555-1234', '3456-7890-1234-5678', '1995-09-30 00:00:00', '234 Birch St, Riverside', 1, '2023-11-22 17:07:10'),
-        ('a3711878-44ae-4328-ad62-4ed45b57c848', 'dsadsad', 'dasads@gmail.com',
-         '$2b$12$prjeXdsp1tP5cwykE07eXe8lECowYo0huIskmRYTfEHBbPtlfFXh6',
-          'https://example.com/mike.jpg', null, null, null, null, 1, '2023-12-05 17:08:48'),
-        ('ad593cad-96fb-4ebe-a5e4-a0b9101a8d5c', 'hhh', '3r24g@gmail.com',
-         '$2b$12$4h9XTIYXVrNgUBzG394ThuMCopoxgxMG1zlMDa0PuufNN9nKiw0Cm',
-          'https://example.com/nina.jpg', null, null, null, null, 1, '2023-11-30 10:14:58'),
-        ('cde5df65-8e91-11ee-8b4f-42010aae0002', 'fuck Garry', '34t345@gmail.com',
-         '$2b$12$I0MmxEOt73PHGmPu0sMWD.kixGZ5yp9rM/yeT09yQRv4uKOD3L/NG',
-          'https://example.com/oliver.jpg', null, null, null, null, 1, '2023-11-29 16:32:17'),
-        ('dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', 'asdfg', '5g55gh@gmail.com',
-         '$2b$12$ewoORsPFmQsYkVNf1jc6UuE9f.Xi235WeH0m78QVdu2xMUBQ.FdLC',
-          'https://example.com/penny.jpg', null, null, null, null, 1, '2023-11-30 21:56:05'),
-        ('ddaa8cf0-8db0-11ee-bb92-42010aae0002', 'name1', '43h54h@gmail.com',
-         '$2b$12$tnxb7Xi0ol/c7Dv9FBLOkO2ZBnqglci58YZ7GPt3fiBI6ClMdoKt6',
-          'https://example.com/quentin.jpg', null, null, null, null, 1, '2023-11-28 13:42:06'),
-        ('f3e433bf-8f2e-11ee-8b4f-42010aae0002', 'fjsdlkjflkds', '3h5h5@gmail.com',
-         '$2b$12$5qitCd5.qoocUYozPp6oleXVNgsJ0jjPH1VfhvJCRRLYKgVP8rdAS',
-          'https://example.com/rose.jpg', null, null, null, null, 1, '2023-11-30 11:17:11'),
-        ('f81672f3-2925-4396-a33e-dd85a4c03ca1', 'fuck', 'email@gmail.com',
-         '$2b$12$34f7VKnl5ea9YZj6/zEH9uTra6a.SK6yWpKrUMyLqS3GlG1GOFklO',
-          'https://example.com/sam.jpg', '123-456-7890', '1234-5678-9012-3456', '1990-01-15 00:00:00', 
-          '123 Main St, Cityville', 1, '2023-12-05 17:21:26');
-          
-insert into NFT.Comment (transaction_uuid, account_uuid, text, likes, dislikes, update_time)
-values  ('abc123-8998-11ee-bb92-42010aae0002', '831cd0d0-8916-11ee-bb92-42010aae0002',
- 'Great transaction! Fast delivery and excellent service.', 15, 2, '2023-11-23 08:59:25'),
-        ('def456-8998-11ee-bb92-42010aae0002', '831cdb41-8916-11ee-bb92-42010aae0002',
-         'Good experience overall. The product quality is impressive.', 10, 1, '2023-11-23 08:59:25'),
-        ('ghi789-8998-11ee-bb92-42010aae0002', '831cdd39-8916-11ee-bb92-42010aae0002',
-         'The coupon code worked perfectly, and I got a nice discount.', 8, 0, '2023-11-23 08:59:25'),
-        ('jkl012-8998-11ee-bb92-42010aae0002', '831cde2e-8916-11ee-bb92-42010aae0002',
-         'Easy ordering process. Looking forward to shopping again!', 12, 3, '2023-11-23 08:59:25'),
-        ('mno345-8998-11ee-bb92-42010aae0002', '831cdf1e-8916-11ee-bb92-42010aae0002',
-         'Delivery was a bit late, but the product is in good condition.', 5, 4, '2023-11-23 08:59:25'),
-        ('pqr678-8998-11ee-bb92-42010aae0002', '849c38d1-8916-11ee-bb92-42010aae0002',
-         'The festive coupon made my purchase much more affordable. Thank you!', 20, 1, '2023-11-23 08:59:25'),
-        ('stu901-8998-11ee-bb92-42010aae0002', '849c3d7c-8916-11ee-bb92-42010aae0002',
-         'Ordered two items, but one was missing. Contacted customer support for a resolution.', 6, 8, '2023-11-23 08:59:25'),
-        ('vwx234-8998-11ee-bb92-42010aae0002', '849c3e36-8916-11ee-bb92-42010aae0002',
-         'Product quality is not up to expectations. Disappointed with the purchase.', 2, 15, '2023-11-23 08:59:25');
-        
-insert into NFT.Coupon (shop_uuid, discount, coupon_code, expire_time, update_time)
-values  ('f150a4b3-8998-11ee-bb92-42010aae0002', 10, 'COUPON1', '2023-12-31 23:59:59', '2023-11-23 08:54:11'),
-        ('f150a4b3-8998-11ee-bb92-42010aae0002', 20, 'COUPON2', '2023-12-15 23:59:59', '2023-11-23 08:54:11'),
-        ('f150af72-8998-11ee-bb92-42010aae0002', 15, 'DISCOUNT15', '2023-12-20 23:59:59', '2023-11-23 08:54:11'),
-        ('f150af72-8998-11ee-bb92-42010aae0002', 25, 'SAVE25NOW', '2023-12-25 23:59:59', '2023-11-23 08:54:11'),
-        ('f150b186-8998-11ee-bb92-42010aae0002', 30, '30OFFSHOP', '2023-12-31 23:59:59', '2023-11-23 08:54:11'),
-        ('f150b186-8998-11ee-bb92-42010aae0002', 15, 'WINTER15', '2023-12-20 23:59:59', '2023-11-23 08:54:11'),
-        ('f150b368-8998-11ee-bb92-42010aae0002', 10, 'HOLIDAY10', '2023-12-31 23:59:59', '2023-11-23 08:54:11'),
-        ('f150b368-8998-11ee-bb92-42010aae0002', 20, 'FESTIVE20', '2023-12-15 23:59:59', '2023-11-23 08:54:11');
-        
-insert into NFT.Product (product_uuid, shop_uuid, name, stock, image_url, price, tags, description, update_time)
-values  ('094527b3-f8f1-4dfc-82cb-066a48d29caa', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002',
- 'TTTTable', 5, 'http://NFT.com/table?.jpg', 111, 'TABLE', null, '2023-11-30 17:00:56'),
-        ('1a234567-8998-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002',
-         'Product 1', 100, 'https://example.com/product1.jpg', 25, 'Tag1', 'Description for Product 1', '2023-11-23 08:49:12'),
-        ('2b345678-8998-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002',
-         'Product 2', 50, 'https://example.com/product2.jpg', 50, 'Tag2', 'Description for Product 2', '2023-11-23 08:49:12'),
-        ('3c456789-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002',
-         'Product 3', 75, 'https://example.com/product3.jpg', 30, 'Tag3', 'Description for Product 3', '2023-11-23 08:49:12'),
-        ('4d567890-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002',
-         'Product 4', 120, 'https://example.com/product4.jpg', 40, 'Tag4', 'Description for Product 4', '2023-11-23 08:49:12'),
-        ('5e678901-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002',
-         'Product 5', 80, 'https://example.com/product5.jpg', 60, 'Tag5', 'Description for Product 5', '2023-11-23 08:49:12'),
-        ('6f789012-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002',
-         'Product 6', 200, 'https://example.com/product6.jpg', 20, 'Tag6', 'Description for Product 6', '2023-11-23 08:49:12'),
-        ('7g890123-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002',
-         'Product 7', 60, 'https://example.com/product7.jpg', 35, 'Tag7', 'Description for Product 7', '2023-11-23 08:49:12'),
-        ('8h901234-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002',
-         'Product 8', 90, 'https://example.com/product8.jpg', 45, 'Tag8', 'Description for Product 8', '2023-11-23 08:49:12'),
-        ('9802e81f-eabb-43d0-8317-79ff9e1fdda8', 'f150af72-8998-11ee-bb92-42010aae0002',
-         'SOFA?', 101, 'http://NFT.com/SOFFFFA.jpg', 101, 'SOFA', 'is sofa?', '2023-11-30 16:41:32'),
-        ('9ad60764-5834-44ee-b328-e34714659212', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca',
-         'BEDDDD', 66, 'http://NFT.com/BED.jpg', 10000, 'BED', null, '2023-11-30 21:58:51'),
-        ('fdf706e4-1cca-43c4-89dd-1cd8f01c69ed', 'f150af72-8998-11ee-bb92-42010aae0002',
-         'TABLEEEE', 555, 'http://NFT.com/tableeee.png', 1000, 'TABLE', null, '2023-11-30 20:00:30');
-        
-insert into NFT.Shop (shop_uuid, account_uuid, name, image_url, description, update_time)
-values  ('6f54c6e7-51f2-4582-ba33-6223a7cf58ca', 'dc7de7cd-22bc-4a45-90bb-74bbc3ff8760',
- 'shoppppppppp11111', 'http://NFT.com/shoppppp.png', null, '2023-11-30 21:57:16'),
-        ('c4f8d1b0-8d24-11ee-bb92-42010aae0002', '76eafe7a-8d1d-11ee-bb92-42010aae0002',
-         'kkyy shop', 'fakk urrlll', 'description', '2023-11-27 20:59:15'),
-        ('e31b3d02-2995-4e2c-9481-93a63403c7af', '7f4d7718-9df9-48d5-92e2-678cfbf09a7b',
-         'fddfsd', 'fsdfsdf', null, '2023-12-01 23:38:31'),
-        ('f150a4b3-8998-11ee-bb92-42010aae0002', '831cd0d0-8916-11ee-bb92-42010aae0002',
-         'changeed name', 'https://static01.nyt.com/images/2023', 'hi gay shop', '2023-11-23 08:40:47'),
-        ('f150acb3-8998-11ee-bb92-42010aae0002', '831cdb41-8916-11ee-bb92-42010aae0002',
-         'Shop 2', 'https://example.com/shop2.jpg', 'This is the second shop.', '2023-11-23 08:40:47'),
-        ('f150af72-8998-11ee-bb92-42010aae0002', '831cdd39-8916-11ee-bb92-42010aae0002',
-         'Shop 3', 'https://example.com/shop3.jpg', 'This is the third shop.', '2023-11-23 08:40:47'),
-        ('f150b096-8998-11ee-bb92-42010aae0002', '831cde2e-8916-11ee-bb92-42010aae0002',
-         'Shop 4', 'https://example.com/shop4.jpg', 'This is the fourth shop.', '2023-11-23 08:40:47'),
-        ('f150b186-8998-11ee-bb92-42010aae0002', '831cdf1e-8916-11ee-bb92-42010aae0002',
-         'Shop 5', 'https://example.com/shop5.jpg', 'This is the fifth shop.', '2023-11-23 08:40:47'),
-        ('f150b368-8998-11ee-bb92-42010aae0002', '849c38d1-8916-11ee-bb92-42010aae0002',
-         'Shop 6', 'https://example.com/shop6.jpg', 'This is the sixth shop.', '2023-11-23 08:40:47'),
-        ('f150b459-8998-11ee-bb92-42010aae0002', '849c3d7c-8916-11ee-bb92-42010aae0002',
-         'Shop 7', 'https://example.com/shop7.jpg', 'This is the seventh shop.', '2023-11-23 08:40:47'),
-        ('f150b531-8998-11ee-bb92-42010aae0002', '849c3e36-8916-11ee-bb92-42010aae0002',
-         'Shop 8', 'https://example.com/shop8.jpg', 'This is the eighth shop.', '2023-11-23 08:40:47'),
-        ('f150b624-8998-11ee-bb92-42010aae0002', '849c3eba-8916-11ee-bb92-42010aae0002',
-         'Shop 9', 'https://example.com/shop9.jpg', 'This is the ninth shop.', '2023-11-23 08:40:47'),
-        ('f150b708-8998-11ee-bb92-42010aae0002', '849c3f2b-8916-11ee-bb92-42010aae0002',
-         'Shop 10', 'https://example.com/shop10.jpg', 'This is the tenth shop.', '2023-11-23 08:40:47'),
-        ('fa82e819-8e92-11ee-8b4f-42010aae0002', 'cde5df65-8e91-11ee-8b4f-42010aae0002',
-         'fjdsklfjfdjlkfsjklfsjlkfjkdwjlkfwf', 'fjdklfjlksd.compofdjdlkwd', 'fuckU ', '2023-11-29 16:40:41');
-        
-insert into NFT.Subscription (account_uuid, shop_uuid)
-values  ('831cd0d0-8916-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002'),
-        ('831cd0d0-8916-11ee-bb92-42010aae0002', 'f150acb3-8998-11ee-bb92-42010aae0002'),
-        ('831cdb41-8916-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002'),
-        ('831cdb41-8916-11ee-bb92-42010aae0002'
-        , 'f150b096-8998-11ee-bb92-42010aae0002'),
-        ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002'),
-        ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002'),
-        ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150b459-8998-11ee-bb92-42010aae0002'),
-        ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150b531-8998-11ee-bb92-42010aae0002');
-        
-insert into NFT.Transaction (transaction_uuid, shop_uuid, account_uuid, coupon_code, receive_time, status, order_time)
-values  ('abc123-8998-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002', '831cd0d0-8916-11ee-bb92-42010aae0002',
- 'COUPON1', '2023-12-05 12:30:00', 'ordering', '2023-11-23 08:57:30'),
-        ('def456-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002', '831cdb41-8916-11ee-bb92-42010aae0002',
-         null, null, 'delivering', '2023-11-23 08:57:30'),
-        ('ghi789-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', '831cdd39-8916-11ee-bb92-42010aae0002',
-         'DISCOUNT15', '2023-12-10 14:45:00', 'arrived', '2023-11-23 08:57:30'),
-        ('jkl012-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002', '831cde2e-8916-11ee-bb92-42010aae0002',
-         null, null, 'ordering', '2023-11-23 08:57:30'),
-        ('mno345-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', '831cdf1e-8916-11ee-bb92-42010aae0002',
-         'SAVE25NOW', '2023-12-08 10:00:00', 'delivering', '2023-11-23 08:57:30'),
-        ('pqr678-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002', '849c38d1-8916-11ee-bb92-42010aae0002',
-         'FESTIVE20', '2023-12-12 18:20:00', 'arrived', '2023-11-23 08:57:30'),
-        ('stu901-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002', '849c3d7c-8916-11ee-bb92-42010aae0002',
-         null, null, 'ordering', '2023-11-23 08:57:30'),
-        ('vwx234-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', '849c3e36-8916-11ee-bb92-42010aae0002',
-         'HOLIDAY10', '2023-12-07 15:10:00', 'delivering', '2023-11-23 08:57:30');
-         
-insert into NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity)
-values  ('abc123-8998-11ee-bb92-42010aae0002', '1a234567-8998-11ee-bb92-42010aae0002', 2),
-        ('abc123-8998-11ee-bb92-42010aae0002', '2b345678-8998-11ee-bb92-42010aae0002', 1),
-        ('def456-8998-11ee-bb92-42010aae0002', '3c456789-8998-11ee-bb92-42010aae0002', 3),
-        ('def456-8998-11ee-bb92-42010aae0002', '4d567890-8998-11ee-bb92-42010aae0002', 1),
-        ('ghi789-8998-11ee-bb92-42010aae0002', '5e678901-8998-11ee-bb92-42010aae0002', 2),
-        ('ghi789-8998-11ee-bb92-42010aae0002', '6f789012-8998-11ee-bb92-42010aae0002', 4),
-        ('jkl012-8998-11ee-bb92-42010aae0002', '7g890123-8998-11ee-bb92-42010aae0002', 1),
-        ('jkl012-8998-11ee-bb92-42010aae0002', '8h901234-8998-11ee-bb92-42010aae0002', 3);
-\end{verbatim}
+\begin{lstlisting}
+--- Contents of 1Account.sql ---
+create table Account
+(
+    account_uuid varchar(64)                          not null
+        primary key,
+    name         varchar(64)                          not null,
+    email        varchar(128)                         not null,
+    pwd          varchar(128)                         not null,
+    phone        varchar(32)                          null,
+    credit_card  varchar(64)                          null,
+    birthday     date                                 null,
+    address      varchar(256)                         null,
+    is_active    tinyint(1) default 1                 null,
+    role         int        default 0                 null,
+    update_time  timestamp  default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    constraint Account_pk
+        unique (email)
+);
+
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'garyy', 't110590028@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '123-456-7890', '4321-8765-0987-6577', '1933-11-28', null, 1, 0, '2023-12-28 03:48:00');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'fortesting', 'testing@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '555-123-4567', '1234-1234-1234-1234', '2023-12-04', '369 divine St, Taipei', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'richman', 'richman@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '987-654-3210', null, null, null, 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('5f0f6adf-4fde-42c0-bc75-6d51a670924c', 'lan', 'asd@asd.djlk', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '876-543-2109', '4321-8765-0987-6111', null, null, 1, 0, '2023-12-28 03:50:07');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('76eafe7a-8d1d-11ee-bb92-42010aae0002', 'kyy', 'asd@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '321-987-6543', null, '2077-07-07', null, 1, 0, '2023-12-28 03:48:40');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('7f4d7718-9df9-48d5-92e2-678cfbf09a7b', 'pal', 'asdf@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '555-555-5555', null, null, null, 1, 0, '2023-12-28 03:48:36');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('831cd0d0-8916-11ee-bb92-42010aae0002', 'john', 'john.doe@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '888-999-0000', '1234-5678-9012-3456', '1990-01-15', '123 Main St, Cityville', 1, 0, '2023-12-28 03:49:16');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('831cdb41-8916-11ee-bb92-42010aae0002', 'gary', 'gjlksjlkdgg32f@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '444-333-2222', '4321-8765-0987-2222', '2002-11-28', '719 Pine St, Villagetown', 1, 0, '2023-12-28 03:50:44');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'Bob Johnson', 'bob.johnson1@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '777-888-9999', '4321-8765-0987-6543', '1978-03-10', '789 Pine St, Villagetown', 0, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'Alice Williams', 'alice.williams@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '111-222-3333', '8765-4321-5678-9012', '1982-11-05', '567 Elm St, Hamletville', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('831cdf1e-8916-11ee-bb92-42010aae0002', 'Charlie Brown', 'charlie.brown@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '666-777-8888', '3456-7890-1234-5678', '1995-09-30', '234 Birch St, Riverside', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('849c38d1-8916-11ee-bb92-42010aae0002', 'John Doe', 'john.1@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '999-888-7777', '1234-5678-9012-3456', '1990-01-15', '123 Main St, Cityville', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('849c3d7c-8916-11ee-bb92-42010aae0002', 'Jane Smith', 'jane.smith@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '333-444-5555', '9876-5432-1098-7654', '1985-07-22', '456 Oak St, Townsville', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('849c3e36-8916-11ee-bb92-42010aae0002', 'Bob Johnson', 'bob.johnson@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '555-444-3333', '4321-8765-0987-6543', '1978-03-10', '789 Pine St, Villagetown', 0, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('849c3eba-8916-11ee-bb92-42010aae0002', 'Monfjdskl', 'fdjkfldjlk@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '777-666-5555', '8765-4321-5678-9012', '1982-11-05', '567 Elm St, Hamletville', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('849c3f2b-8916-11ee-bb92-42010aae0002', 'Dars Veda', '654675@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '222-333-4444', '3456-7890-1234-5678', '1995-09-30', '234 Birch St, Riverside', 1, 0, '2023-12-28 03:47:29');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('a3711878-44ae-4328-ad62-4ed45b57c848', 'rat', 'dasads@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '444-555-6666', null, null, null, 1, 0, '2023-12-28 03:49:28');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('ad593cad-96fb-4ebe-a5e4-a0b9101a8d5c', 'hatt', '3r24g@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '666-555-4444', null, null, null, 1, 0, '2023-12-28 03:49:34');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('cde5df65-8e91-11ee-8b4f-42010aae0002', 'han', '34t345@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '888-777-6666', null, null, null, 1, 0, '2023-12-28 03:48:50');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', 'owen', '5g55gh@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '123-987-6543', null, null, null, 1, 0, '2023-12-28 03:48:59');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('ddaa8cf0-8db0-11ee-bb92-42010aae0002', 's_admin', 'subemail@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', null, null, null, null, 1, 1, '2023-12-28 03:52:07');
+INSERT INTO NFT.Account (account_uuid, name, email, pwd, phone, credit_card, birthday, address, is_active, role, update_time) VALUES ('f81672f3-2925-4396-a33e-dd85a4c03ca1', 'e_admin', 'email@gmail.com', '$2b$12$tu4S3wbz1lcwnMZlI8QVTusvZqDx4bBMz5HOyPx0dnZozWTxtjMcC', '123-456-7890', '1234-5678-9012-3456', '1990-01-15', '123 Main St, Cityville', 1, 1, '2023-12-28 03:52:07');
+
+
+--- Contents of 2Shop.sql ---
+create table Shop
+(
+    shop_uuid    varchar(64)                         not null
+        primary key,
+    account_uuid varchar(64)                         not null,
+    name         varchar(64)                         not null,
+    description  varchar(512)                        null,
+    is_active    int       default 1                 null,
+    update_time  timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    constraint account_uuid
+        unique (account_uuid),
+    constraint Shop_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid)
+);
+
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('6f54c6e7-51f2-4582-ba33-6223a7cf58ca', 'dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', 'Quantum Emporium', 'Step into a space where cutting-edge technology meets timeless elegance. Discover futuristic gadgets', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('c4f8d1b0-8d24-11ee-bb92-42010aae0002', '76eafe7a-8d1d-11ee-bb92-42010aae0002', 'Enchanted Finds Boutique', 'Unearth the magic within. This whimsical shop invites you to explore a world of spellbinding treasures', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('c90a780a-8974-4507-9f57-032e5324f18f', 'f81672f3-2925-4396-a33e-dd85a4c03ca1', 'Celestial Creations Outlet', 'Reach for the stars at this outlet', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('e31b3d02-2995-4e2c-9481-93a63403c7af', '7f4d7718-9df9-48d5-92e2-678cfbf09a7b', 'Urban Oasis Marketplace', 'Find sanctuary in the heart of the city. This eco-friendly haven offers sustainable goods', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150a4b3-8998-11ee-bb92-42010aae0002', '831cd0d0-8916-11ee-bb92-42010aae0002', 'Mystic Treasures Emporium', 'Embark on a journey of wonder. Uncover ancient artifacts', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150acb3-8998-11ee-bb92-42010aae0002', '831cdb41-8916-11ee-bb92-42010aae0002', 'Vintage Charm Bazaar', 'Timeless elegance meets nostalgia. Browse through carefully curated vintage finds', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150af72-8998-11ee-bb92-42010aae0002', '831cdd39-8916-11ee-bb92-42010aae0002', 'Many product Shop', 'Immerse yourself in the vibrant world of. This artistic oasis showcases handmade crafts', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b096-8998-11ee-bb92-42010aae0002', '831cde2e-8916-11ee-bb92-42010aae0002', 'Starlight Trinkets Gallery', 'Illuminate your life with the treasures at. Discover a curated collection of exquisite jewelry', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b186-8998-11ee-bb92-42010aae0002', '831cdf1e-8916-11ee-bb92-42010aae0002', 'Serendipity Souvenirs Co.', 'Embrace the joy of discovery at. This delightful shop offers charming souvenirs', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b368-8998-11ee-bb92-42010aae0002', '849c38d1-8916-11ee-bb92-42010aae0002', 'Velvet Twilight Emporium', 'Dive into the luxurious ambiance of. This boutique indulges your senses with plush fabrics', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b459-8998-11ee-bb92-42010aae0002', '849c3d7c-8916-11ee-bb92-42010aae0002', 'Luminous Artisan Collective', 'Illuminate your surroundings with the brilliance of the. Explore handcrafted luminaries', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b531-8998-11ee-bb92-42010aae0002', '849c3e36-8916-11ee-bb92-42010aae0002', 'Mirage Mercantile', 'Experience the allure of', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b624-8998-11ee-bb92-42010aae0002', '849c3eba-8916-11ee-bb92-42010aae0002', 'Pinnacle Curiosities Corner', 'Ascend to new heights of curiosity at. This eclectic shop features an assortment of oddities', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('f150b708-8998-11ee-bb92-42010aae0002', '849c3f2b-8916-11ee-bb92-42010aae0002', 'Harmonic Haven Emporium', 'Find harmony in every purchase at. This holistic store offers wellness products', 1, '2023-12-28 03:57:18');
+INSERT INTO NFT.Shop (shop_uuid, account_uuid, name, description, is_active, update_time) VALUES ('fa82e819-8e92-11ee-8b4f-42010aae0002', 'cde5df65-8e91-11ee-8b4f-42010aae0002', 'Whimsy Wonders Shoppe', 'Step into a world of whimsy at. Playful and eccentric', 1, '2023-12-28 03:57:18');
+
+
+--- Contents of 3Subscription.sql ---
+create table Subscription
+(
+    account_uuid varchar(64) not null,
+    shop_uuid    varchar(64) not null,
+    primary key (account_uuid, shop_uuid),
+    constraint Subscription_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint Subscription_ibfk_2
+        foreign key (shop_uuid) references Shop (shop_uuid)
+);
+
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'c90a780a-8974-4507-9f57-032e5324f18f');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'c90a780a-8974-4507-9f57-032e5324f18f');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'c90a780a-8974-4507-9f57-032e5324f18f');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'c90a780a-8974-4507-9f57-032e5324f18f');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'e31b3d02-2995-4e2c-9481-93a63403c7af');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'e31b3d02-2995-4e2c-9481-93a63403c7af');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'e31b3d02-2995-4e2c-9481-93a63403c7af');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'e31b3d02-2995-4e2c-9481-93a63403c7af');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150a4b3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150acb3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150acb3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'f150acb3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150acb3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150acb3-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150af72-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150b096-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150b096-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'f150b096-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150b096-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150b096-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150b186-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', 'f150b368-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002');
+INSERT INTO NFT.Subscription (account_uuid, shop_uuid) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002');
+
+
+--- Contents of 4Product.sql ---
+create table Product
+(
+    product_uuid varchar(64)                         not null
+        primary key,
+    shop_uuid    varchar(64)                         not null,
+    name         varchar(64)                         not null,
+    stock        int                                 not null,
+    price        int                                 not null,
+    tags         varchar(32)                         null,
+    description  varchar(512)                        null,
+    is_active    int       default 1                 null,
+    update_time  timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    constraint Product_ibfk_1
+        foreign key (shop_uuid) references Shop (shop_uuid)
+);
+
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('0044af9a-bb9d-4c32-87c9-1ae99c9299eb', 'f150af72-8998-11ee-bb92-42010aae0002', 'Accent tables', 35, 79, 'Accent Furniture', 'Complete your living space with these stylish accent tables', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('094527b3-f8f1-4dfc-82cb-066a48d29caa', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002', 'Sofa', 25, 799, 'Living Room Furniture', 'A comfortable and stylish sofa', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('0bfe4b7f-0c9b-43f0-aa09-c5c28234c9cb', 'f150af72-8998-11ee-bb92-42010aae0002', 'Bed frame', 15, 299, 'Bedroom Furniture', 'Create a cozy retreat with this stylish bed frame', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('0c27f54e-6bc4-4ff4-8445-48a2a5474d01', 'f150af72-8998-11ee-bb92-42010aae0002', 'Patio chairs', 40, 49, 'Outdoor Furniture', 'Relax in style with these comfortable patio chairs', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('1a234567-8998-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002', 'Couch', 30, 649, 'Living Room Furniture', 'A comfortable and stylish couch', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('1fbefdd1-1d97-4a2d-9182-9ee6bb6fb14f', 'f150af72-8998-11ee-bb92-42010aae0002', 'China cabinet', 10, 549, 'Dining Room Furniture', 'Display your fine china and glassware in style with this elegant china cabinet', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('20c5e309-6f0f-4f8c-a5b5-2f82a8e61a09', 'f150af72-8998-11ee-bb92-42010aae0002', 'Wardrobe', 10, 699, 'Bedroom Furniture', 'Maximize your storage with this versatile wardrobe', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('22b1c981-1b4e-43b9-8c62-61040e84e530', 'f150af72-8998-11ee-bb92-42010aae0002', 'Chaise lounge', 15, 349, 'Miscellaneous Furniture', 'Lounge in luxury with this elegant chaise lounge', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('25d07c64-2586-4aa4-8d7c-dfed09e6eeef', 'f150af72-8998-11ee-bb92-42010aae0002', 'Pantry cabinet', 20, 249, 'Kitchen Furniture', 'Organize your kitchen essentials with this spacious pantry cabinet', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('2b345678-8998-11ee-bb92-42010aae0002', 'f150a4b3-8998-11ee-bb92-42010aae0002', 'Coffee table', 40, 149, 'Living Room Furniture', 'Complete your living room with this elegant coffee table', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('2e327174-1f5a-4e76-b1f1-95b0d252053f', 'f150af72-8998-11ee-bb92-42010aae0002', 'Bar cabinet', 25, 179, 'Miscellaneous Furniture', 'Create a stylish and functional bar area with this trendy bar cabinet', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('3997a98e-4040-4c01-aa10-9c8f2a91c3fb', 'f150af72-8998-11ee-bb92-42010aae0002', 'Sun loungers', 25, 129, 'Outdoor Furniture', 'Soak up the sun in style with these adjustable sun loungers', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('3a5428f8-0a0f-4aae-88b4-8d9d9107ee41', 'f150af72-8998-11ee-bb92-42010aae0002', 'Kitchen cart', 25, 149, 'Kitchen Furniture', 'Increase your kitchen\'s versatility with this handy kitchen cart', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('3c456789-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002', 'End tables', 50, 79, 'Living Room Furniture', 'These versatile end tables add a touch of sophistication to your living space while providing convenient surfaces for your essentials.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('412fd34f-4e5f-49d5-9a7e-99f2c3a61e26', 'f150af72-8998-11ee-bb92-42010aae0002', 'Benches', 30, 69, 'Miscellaneous Furniture', 'Add seating and style to your space with these versatile benches', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('4b57858b-1b99-487a-a875-95a7db65d9d5', 'f150af72-8998-11ee-bb92-42010aae0002', 'Kitchen island', 15, 399, 'Kitchen Furniture', 'Enhance your kitchen\'s functionality with this versatile kitchen island', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('4d567890-8998-11ee-bb92-42010aae0002', 'f150af72-8998-11ee-bb92-42010aae0002', 'Entertainment center', 20, 899, 'Living Room Furniture', 'Organize your electronics and elevate your entertainment experience with this sleek and functional entertainment center.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('4f888388-88e2-4e56-aef6-6e34faddaf66', 'f150af72-8998-11ee-bb92-42010aae0002', 'Changing table', 30, 89, 'Children\'s Furniture', 'Make diaper changes a breeze with this practical changing table', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('511029a0-d61d-4f30-80fc-00c04fd430c8', 'f150af72-8998-11ee-bb92-42010aae0002', 'Shelving units', 20, 179, 'Storage Furniture', 'Organize your belongings with these versatile and stylish shelving units', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('56fc8f82-5a58-4969-92b5-39d8779af251', 'f150af72-8998-11ee-bb92-42010aae0002', 'Shoe rack', 40, 49, 'Storage Furniture', 'Keep your entryway tidy with this practical shoe rack', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('59c64093-c6b3-4b6e-85d7-2156ecab8d90', 'f150af72-8998-11ee-bb92-42010aae0002', 'Cabinets', 15, 299, 'Storage Furniture', 'Add extra storage to your space with these practical and sleek cabinets', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('59da8f80-695c-496e-842d-cd26d1f8f437', 'f150af72-8998-11ee-bb92-42010aae0002', 'Kids\' bed', 15, 299, 'Children\'s Furniture', 'Transition your child to a big-kid bed with this charming and sturdy kids\' bed', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('5ad6bce5-7c8d-4ac1-8da2-5c0dfcf8e90e', 'f150af72-8998-11ee-bb92-42010aae0002', 'Hammock', 30, 79, 'Outdoor Furniture', 'Unwind and enjoy the outdoors in this comfortable hammock', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('5e44205d-fc87-4f5a-9dcd-6f7ed0749c6d', 'f150af72-8998-11ee-bb92-42010aae0002', 'Storage benches', 30, 99, 'Storage Furniture', 'Declutter your living space with these stylish storage benches', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('5e678901-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', 'TV stand', 35, 129, 'Living Room Furniture', 'A modern TV stand that combines style and functionality', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'f150af72-8998-11ee-bb92-42010aae0002', 'Umbrella', 40, 39, 'Outdoor Furniture', 'Stay cool in the shade with this practical and stylish umbrella', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('6c0b3e5c-b3e3-4b0c-af6e-7f6e0a3f2b0c', 'f150af72-8998-11ee-bb92-42010aae0002', 'Children\'s desk and chair', 2, 129, 'Children\'s Furniture', 'Foster creativity and learning with this adorable children\'s desk and chair set', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('6c1176f3-d755-416a-9231-90e7c7d26f5a', 'f150af72-8998-11ee-bb92-42010aae0002', 'Toy chest', 35, 59, 'Children\'s Furniture', 'Keep your child\'s play area organized with this spacious and playful toy chest', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('6f789012-8998-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', 'Bookshelves', 15, 249, 'Living Room Furniture', 'Showcase your book collection and decorative items with these sturdy and stylish bookshelves.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('77e35067-568a-4b54-926a-0b2a38f51e34', 'f150af72-8998-11ee-bb92-42010aae0002', 'Outdoor sofa', 10, 599, 'Outdoor Furniture', 'Create a cozy outdoor living space with this inviting outdoor sofa', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('78a278bf-4dbf-4daa-a62a-7913f0588380', 'f150af72-8998-11ee-bb92-42010aae0002', 'Decorative chests', 30, 129, 'Accent Furniture', 'Make a statement with these eye-catching decorative chests', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('7dd79b2d-0a68-48a5-82a9-8a824929d8d1', 'f150af72-8998-11ee-bb92-42010aae0002', 'Bookshelves', 20, 249, 'Home Office Furniture', 'Organize your books and office essentials with these sleek and sturdy bookshelves.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('7e724a93-028d-4b65-9c72-22d5e3b4826c', 'f150af72-8998-11ee-bb92-42010aae0002', 'Bar stools', 30, 69, 'Kitchen Furniture', 'Add seating to your kitchen counter or bar with these modern and comfortable bar stools.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('7g890123-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002', 'Lounge chair', 10, 399, 'Living Room Furniture', 'Sink into comfort with this chic lounge chair', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('8683e1bc-76ee-4d92-9c1e-73c5b0c2a609', 'f150af72-8998-11ee-bb92-42010aae0002', 'Futon', 20, 249, 'Miscellaneous Furniture', 'Maximize your space with this practical futon', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('8ef7cafb-dde5-4cc2-b3e7-39c9b13b0a39', 'f150af72-8998-11ee-bb92-42010aae0002', 'Chests', 25, 199, 'Storage Furniture', 'Store your belongings in style with these elegant chests', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('8f8459f3-7bd3-4d6e-af6c-7e68e70e243b', 'f150af72-8998-11ee-bb92-42010aae0002', 'Room dividers', 35, 99, 'Accent Furniture', 'Define your space with these versatile and decorative room dividers', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('8h901234-8998-11ee-bb92-42010aae0002', 'f150b368-8998-11ee-bb92-42010aae0002', 'Ottoman', 20, 129, 'Living Room Furniture', 'Add a touch of luxury and versatility to your living space with this elegant ottoman', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9141d7c9-2ef3-4b31-8d89-0b83f43d2c6c', 'f150af72-8998-11ee-bb92-42010aae0002', 'Nightstand', 25, 89, 'Bedroom Furniture', 'Keep your essentials within arm\'s reach with this sleek and functional nightstand', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('95c2c075-0ba8-40c2-bb21-d1d9fb88ca98', 'f150af72-8998-11ee-bb92-42010aae0002', 'Office chair', 25, 129, 'Home Office Furniture', 'Work in comfort with this ergonomic office chair', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9802e81f-eabb-43d0-8317-79ff9e1fdda8', 'f150af72-8998-11ee-bb92-42010aae0002', 'Sideboard', 15, 599, 'Living Room Furniture', 'This handsome sideboard offers ample storage for your dining essentials', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9ad60764-5834-44ee-b328-e34714659212', '6f54c6e7-51f2-4582-ba33-6223a7cf58ca', 'Dining table', 20, 499, 'Dining Room Furniture', 'Gather your family and friends around this beautiful dining table', 1, '2023-12-28 03:04:33');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9c097f95-7b80-44c3-88fb-27d5e9b4e601', 'f150af72-8998-11ee-bb92-42010aae0002', 'Mattress', 10, 599, 'Bedroom Furniture', 'Enjoy a restful night\'s sleep on this high-quality mattress', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9dd4e461-54b8-40d6-b88d-6a3e6a3c7b65', 'f150af72-8998-11ee-bb92-42010aae0002', 'Vanity', 20, 199, 'Bedroom Furniture', 'Create a stylish and functional space for your morning routine with this elegant vanity and mirror set.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('9df77c88-5d63-4c3a-8898-77b041439bf0', 'f150af72-8998-11ee-bb92-42010aae0002', 'Chest of drawers', 20, 349, 'Bedroom Furniture', 'Add extra storage to your bedroom with this classic chest of drawers', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('baa8c00d-5a21-43d7-81f5-71f1fe3c2d87', 'f150af72-8998-11ee-bb92-42010aae0002', 'Accent chairs', 25, 149, 'Accent Furniture', 'Elevate your decor with these chic and comfortable accent chairs', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('c0a3a2d9-0e56-470a-908b-1b2e0720dd51', 'f150af72-8998-11ee-bb92-42010aae0002', 'Mirrors', 40, 59, 'Accent Furniture', 'Add depth and style to your space with these elegant mirrors', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('c9dd9ce4-3323-4d1d-9909-5391f0b37bbd', 'f150af72-8998-11ee-bb92-42010aae0002', 'Dresser', 15, 449, 'Bedroom Furniture', 'Organize your wardrobe with this spacious dresser', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('d86cf000-407d-11eb-8202-0242ac130002', 'f150af72-8998-11ee-bb92-42010aae0002', 'Poufs', 45, 75, 'Miscellaneous Furniture', 'Enhance your living space with these comfortable and stylish poufs', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('dcbce6f6-031b-4b2c-8f2c-b3a23bfbd8dd', 'f150af72-8998-11ee-bb92-42010aae0002', 'Desk', 30, 149, 'Home Office Furniture', 'Boost your productivity with this practical desk', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('dcf9b6fc-3c85-4b4b-85de-99a99e864980', 'f150af72-8998-11ee-bb92-42010aae0002', 'Filing cabinet', 25, 99, 'Home Office Furniture', 'Keep your documents organized and secure with this practical filing cabinet', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('efcda8ab-5fe6-4f72-9263-76d77331a222', 'f150af72-8998-11ee-bb92-42010aae0002', 'Bar cart', 30, 129, 'Dining Room Furniture', 'Elevate your entertaining with this trendy bar cart', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('f1515522-c73b-4c66-8e57-e61e0d09b432', 'f150af72-8998-11ee-bb92-42010aae0002', 'Patio table', 15, 299, 'Outdoor Furniture', 'Enjoy outdoor dining with this sturdy and weather-resistant patio table', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('f47c9e54-4a81-4159-9f1c-bd1796b95111', 'f150af72-8998-11ee-bb92-42010aae0002', 'Buffet', 15, 349, 'Dining Room Furniture', 'Enhance your dining room with this practical buffet', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('f78e764c-2344-4efc-862e-23c775e7e66f', 'f150af72-8998-11ee-bb92-42010aae0002', 'Crib', 20, 199, 'Children\'s Furniture', 'Create a safe and comfortable space for your little one with this sturdy and stylish crib.', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('fdd5d5ef-8b8a-42eb-9887-6a90c0fe4a3a', 'f150af72-8998-11ee-bb92-42010aae0002', 'Credenza', 15, 399, 'Home Office Furniture', 'Add a touch of sophistication to your office space with this stylish credenza', 1, '2023-11-30 21:58:51');
+INSERT INTO NFT.Product (product_uuid, shop_uuid, name, stock, price, tags, description, is_active, update_time) VALUES ('fdf706e4-1cca-43c4-89dd-1cd8f01c69ed', 'f150af72-8998-11ee-bb92-42010aae0002', 'Dining chairs', 25, 89, 'Dining Room Furniture', 'Complement your dining table with these comfortable and stylish chairs', 1, '2023-11-30 21:58:51');
+
+
+--- Contents of 5Coupon.sql ---
+create table Coupon
+(
+    coupon_uuid varchar(64)                         not null
+        primary key,
+    coupon_code varchar(16)                         not null,
+    discount    int                                 not null,
+    expire_time timestamp                           not null,
+    update_time timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    check ((`discount` >= 0) and (`discount` <= 100))
+);
+
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('abc123', 'SAVE20', 20, '2024-12-31 23:59:59', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('abc890', 'NEWYEAR50', 50, '2024-12-31 23:59:59', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('def123', 'MEMORIAL20', 20, '2024-05-31 18:30:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('def456', 'GET50OFF', 50, '2024-06-30 18:30:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('ghi456', 'LABORDAY15', 15, '2024-09-30 12:00:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('ghi789', 'FREESHIP', 100, '2024-12-15 12:00:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('jkl012', 'HOLIDAY25', 25, '2024-12-25 23:59:59', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('jkl789', 'EASTER10', 10, '2024-04-15 23:59:59', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('mno345', 'BIGSALE', 30, '2024-07-31 18:30:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('pqr678', 'WINTERSALE', 40, '2024-08-28 12:00:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('stu901', 'SUMMERDEAL', 15, '2024-08-31 23:59:59', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('vwx234', 'FLASHSALE', 50, '2024-12-10 18:30:00', '2023-12-28 02:45:25');
+INSERT INTO NFT.Coupon (coupon_uuid, coupon_code, discount, expire_time, update_time) VALUES ('yzu567', 'SPRINGSALE', 35, '2024-04-30 12:00:00', '2023-12-28 02:45:25');
+
+
+--- Contents of 6Transaction.sql ---
+create table Transaction
+(
+    transaction_uuid varchar(64)                         not null
+        primary key,
+    account_uuid     varchar(64)                         not null,
+    shop_uuid        varchar(64)                         not null,
+    coupon_uuid      varchar(16)                         null,
+    receive_time     datetime                            null,
+    status           ENUM('Ordered', 'Delivering', 'Arrived', 'Cancelled') not null,
+    order_time       timestamp default CURRENT_TIMESTAMP not null,
+    update_time      timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    constraint Transaction_ibfk_2
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint Transaction_ibfk_3
+        foreign key (shop_uuid) references Shop (shop_uuid),
+    constraint Transaction_ibfk_4
+        foreign key (coupon_uuid) references Coupon (coupon_uuid),
+    constraint Receive_after_arrive_check
+        check ((`receive_time` is null) or (`status` = 'Arrived'))
+);
+
+INSERT INTO NFT.Transaction (transaction_uuid, account_uuid, shop_uuid, coupon_uuid, receive_time, status, order_time, update_time) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', '831cde2e-8916-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', 'def123', '2023-12-26 17:20:47', 'Arrived', '2023-12-26 09:21:01', '2023-12-30 13:43:38');
+INSERT INTO NFT.Transaction (transaction_uuid, account_uuid, shop_uuid, coupon_uuid, receive_time, status, order_time, update_time) VALUES ('a8d3276c-71ac-4e7c-9d28-7426515dfed9', '831cdb41-8916-11ee-bb92-42010aae0002', 'f150b186-8998-11ee-bb92-42010aae0002', null, null, 'Cancelled', '2023-12-28 11:00:00', '2023-12-30 14:23:01');
+INSERT INTO NFT.Transaction (transaction_uuid, account_uuid, shop_uuid, coupon_uuid, receive_time, status, order_time, update_time) VALUES ('e31b3d02-2995-4e2c-9481-93a63403c7af', '4001309d-8f2f-11ee-8b4f-42010aae0002', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002', 'def123', null, 'Ordered', '2023-12-26 09:18:58', '2023-12-30 13:43:38');
+INSERT INTO NFT.Transaction (transaction_uuid, account_uuid, shop_uuid, coupon_uuid, receive_time, status, order_time, update_time) VALUES ('f0234cf1-1f47-4b3c-8777-5fe72a94e510', '2dba33fc-345c-48e1-bdaa-62665648022b', 'f150af72-8998-11ee-bb92-42010aae0002', null, '2023-12-28 10:00:00', 'Arrived', '2023-12-28 09:30:00', '2023-12-30 14:23:01');
+INSERT INTO NFT.Transaction (transaction_uuid, account_uuid, shop_uuid, coupon_uuid, receive_time, status, order_time, update_time) VALUES ('f3765e89-2826-46ee-97da-126fa81ee280', '4001309d-8f2f-11ee-8b4f-42010aae0002', 'c4f8d1b0-8d24-11ee-bb92-42010aae0002', null, '2023-12-30 13:50:42', 'Arrived', '2023-12-30 13:59:45', '2023-12-30 14:00:29');
+
+
+--- Contents of 7TransactionProductLog.sql ---
+create table TransactionProductLog
+(
+    transaction_uuid varchar(64)  not null,
+    product_uuid     varchar(64)  not null,
+    quantity         int unsigned not null,
+    constraint TransactionProductLog_ibfk_1
+        foreign key (transaction_uuid) references Transaction (transaction_uuid),
+    constraint TransactionProductLog_ibfk_2
+        foreign key (product_uuid) references Product (product_uuid),
+    constraint Check_ProductQuantity
+        check (quantity > 0)
+);
+
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('e31b3d02-2995-4e2c-9481-93a63403c7af', '5e678901-8998-11ee-bb92-42010aae0002', 10);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('e31b3d02-2995-4e2c-9481-93a63403c7af', '6f789012-8998-11ee-bb92-42010aae0002', 10);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 10);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('f3765e89-2826-46ee-97da-126fa81ee280', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 2);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('f0234cf1-1f47-4b3c-8777-5fe72a94e510', '0044af9a-bb9d-4c32-87c9-1ae99c9299eb', 2);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('f0234cf1-1f47-4b3c-8777-5fe72a94e510', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 1);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('a8d3276c-71ac-4e7c-9d28-7426515dfed9', '1a234567-8998-11ee-bb92-42010aae0002', 3);
+INSERT INTO NFT.TransactionProductLog (transaction_uuid, product_uuid, quantity) VALUES ('a8d3276c-71ac-4e7c-9d28-7426515dfed9', '20c5e309-6f0f-4f8c-a5b5-2f82a8e61a09', 1);
+
+
+--- Contents of 8Comment.sql ---
+create table Comment
+(
+    comment_uuid varchar(64)                         not null
+        primary key,
+    product_uuid varchar(64)                         not null,
+    account_uuid varchar(64)                         not null,
+    text         varchar(512)                        not null,
+    update_time  timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    constraint Comment_ibfk_1
+        foreign key (product_uuid) references Product (product_uuid),
+    constraint Comment_ibfk_2
+        foreign key (account_uuid) references Account (account_uuid)
+);
+
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0724e9e8-58aa-48a6-a5b9-1443a1062601', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 'f81672f3-2925-4396-a33e-dd85a4c03ca1', 'nice', '2023-12-28 06:05:59');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc5975-9f28-11ee-9df2-0242ac140002', '094527b3-f8f1-4dfc-82cb-066a48d29caa', '2dba33fc-345c-48e1-bdaa-62665648022b', 'Great product!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6283-9f28-11ee-9df2-0242ac140002', '1a234567-8998-11ee-bb92-42010aae0002', '325ea530-8f2f-11ee-8b4f-42010aae0002', 'Awesome features!', '2023-12-20 11:08:59');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6458-9f28-11ee-9df2-0242ac140002', '2b345678-8998-11ee-bb92-42010aae0002', '4001309d-8f2f-11ee-8b4f-42010aae0002', 'I love it!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6534-9f28-11ee-9df2-0242ac140002', '3c456789-8998-11ee-bb92-42010aae0002', '5f0f6adf-4fde-42c0-bc75-6d51a670924c', 'Could be better.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc65e8-9f28-11ee-9df2-0242ac140002', '4d567890-8998-11ee-bb92-42010aae0002', '76eafe7a-8d1d-11ee-bb92-42010aae0002', 'Not impressed.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc66a7-9f28-11ee-9df2-0242ac140002', '5e678901-8998-11ee-bb92-42010aae0002', '7f4d7718-9df9-48d5-92e2-678cfbf09a7b', 'Good value for money, yaaa.', '2023-12-20 11:09:12');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6788-9f28-11ee-9df2-0242ac140002', '6f789012-8998-11ee-bb92-42010aae0002', '831cd0d0-8916-11ee-bb92-42010aae0002', 'Impressive design!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6918-9f28-11ee-9df2-0242ac140002', '7g890123-8998-11ee-bb92-42010aae0002', '831cdb41-8916-11ee-bb92-42010aae0002', 'User-friendly interface.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc69fd-9f28-11ee-9df2-0242ac140002', '8h901234-8998-11ee-bb92-42010aae0002', '831cdd39-8916-11ee-bb92-42010aae0002', 'Satisfied customer.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6aa5-9f28-11ee-9df2-0242ac140002', '9802e81f-eabb-43d0-8317-79ff9e1fdda8', '831cde2e-8916-11ee-bb92-42010aae0002', 'Highly recommended!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6b56-9f28-11ee-9df2-0242ac140002', '9ad60764-5834-44ee-b328-e34714659212', '831cdf1e-8916-11ee-bb92-42010aae0002', 'Great buy!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6bf1-9f28-11ee-9df2-0242ac140002', 'fdf706e4-1cca-43c4-89dd-1cd8f01c69ed', '849c38d1-8916-11ee-bb92-42010aae0002', 'Quality product.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6c9a-9f28-11ee-9df2-0242ac140002', '094527b3-f8f1-4dfc-82cb-066a48d29caa', '849c3d7c-8916-11ee-bb92-42010aae0002', 'Impressed with the performance.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6d1d-9f28-11ee-9df2-0242ac140002', '1a234567-8998-11ee-bb92-42010aae0002', '849c3e36-8916-11ee-bb92-42010aae0002', 'Not bad.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6dcd-9f28-11ee-9df2-0242ac140002', '2b345678-8998-11ee-bb92-42010aae0002', '849c3eba-8916-11ee-bb92-42010aae0002', 'Fast shipping!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6f3c-9f28-11ee-9df2-0242ac140002', '3c456789-8998-11ee-bb92-42010aae0002', '849c3f2b-8916-11ee-bb92-42010aae0002', 'Disappointed.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc6fc2-9f28-11ee-9df2-0242ac140002', '4d567890-8998-11ee-bb92-42010aae0002', 'a3711878-44ae-4328-ad62-4ed45b57c848', 'Could use some improvements.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc7058-9f28-11ee-9df2-0242ac140002', '5e678901-8998-11ee-bb92-42010aae0002', 'ad593cad-96fb-4ebe-a5e4-a0b9101a8d5c', 'Excellent customer service!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc7112-9f28-11ee-9df2-0242ac140002', '6f789012-8998-11ee-bb92-42010aae0002', 'cde5df65-8e91-11ee-8b4f-42010aae0002', 'Happy with my purchase.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc71ca-9f28-11ee-9df2-0242ac140002', '7g890123-8998-11ee-bb92-42010aae0002', 'dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', 'Not recommended.', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc727f-9f28-11ee-9df2-0242ac140002', '8h901234-8998-11ee-bb92-42010aae0002', 'ddaa8cf0-8db0-11ee-bb92-42010aae0002', 'Great value!', '2023-12-20 11:08:07');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('0dbc727f-9f28-11ee-9df2-0242ac145697', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 'f81672f3-2925-4396-a33e-dd85a4c03ca1', 'i think mine product is awesome!', '2023-12-25 20:31:56');
+INSERT INTO NFT.Comment (comment_uuid, product_uuid, account_uuid, text, update_time) VALUES ('77c0adc9-dc73-4fb9-9b07-c9a57827c2aa', '094527b3-f8f1-4dfc-82cb-066a48d29caa', 'f81672f3-2925-4396-a33e-dd85a4c03ca1', 'poor design', '2023-12-28 06:06:40');
+
+
+--- Contents of 9HateList.sql ---
+create table HateList
+(
+    account_uuid varchar(64) not null,
+    comment_uuid varchar(64) not null,
+    if_hates     tinyint(1)  not null,
+    primary key (account_uuid, comment_uuid),
+    constraint HateList_ibfk_1
+        foreign key (account_uuid) references Account (account_uuid),
+    constraint HateList_ibfk_2
+        foreign key (comment_uuid) references Comment (comment_uuid)
+);
+
+create index comment_uuid
+    on HateList (comment_uuid);
+
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('2dba33fc-345c-48e1-bdaa-62665648022b', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('325ea530-8f2f-11ee-8b4f-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('4001309d-8f2f-11ee-8b4f-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('5f0f6adf-4fde-42c0-bc75-6d51a670924c', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('5f0f6adf-4fde-42c0-bc75-6d51a670924c', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('76eafe7a-8d1d-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('76eafe7a-8d1d-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('7f4d7718-9df9-48d5-92e2-678cfbf09a7b', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('7f4d7718-9df9-48d5-92e2-678cfbf09a7b', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cd0d0-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cd0d0-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdb41-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdb41-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdd39-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cde2e-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdf1e-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('831cdf1e-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c38d1-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c38d1-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3d7c-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3d7c-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3e36-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3e36-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3eba-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3eba-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3f2b-8916-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('849c3f2b-8916-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('a3711878-44ae-4328-ad62-4ed45b57c848', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('a3711878-44ae-4328-ad62-4ed45b57c848', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('ad593cad-96fb-4ebe-a5e4-a0b9101a8d5c', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('ad593cad-96fb-4ebe-a5e4-a0b9101a8d5c', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('cde5df65-8e91-11ee-8b4f-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('cde5df65-8e91-11ee-8b4f-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('dc7de7cd-22bc-4a45-90bb-74bbc3ff8760', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('ddaa8cf0-8db0-11ee-bb92-42010aae0002', '0dbc5975-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('ddaa8cf0-8db0-11ee-bb92-42010aae0002', '0dbc6283-9f28-11ee-9df2-0242ac140002', 1);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('f81672f3-2925-4396-a33e-dd85a4c03ca1', '0dbc5975-9f28-11ee-9df2-0242ac140002', 0);
+INSERT INTO NFT.HateList (account_uuid, comment_uuid, if_hates) VALUES ('f81672f3-2925-4396-a33e-dd85a4c03ca1', '0dbc6283-9f28-11ee-9df2-0242ac140002', 0);
+
+
+--- Contents of trigger.sql ---
+DELIMITER //
+
+CREATE TRIGGER check_coupon_code
+    BEFORE INSERT
+    ON Coupon
+    FOR EACH ROW
+BEGIN
+    IF NEW.coupon_code IS NOT NULL THEN
+        IF EXISTS (SELECT 1
+                   FROM Coupon
+                   WHERE coupon_code = NEW.coupon_code
+                     and expire_time >= convert_tz(now(), 'UTC', 'Asia/Taipei')) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'There is a same coupon code that is not expired yet.';
+        END IF;
+    END IF;
+END;
+//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER check_coupon_expire_time
+    BEFORE INSERT
+    ON Coupon
+    FOR EACH ROW
+BEGIN
+    IF NEW.coupon_code IS NOT NULL THEN
+        IF New.expire_time < convert_tz(now(), 'UTC', 'Asia/Taipei') THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'The coupon has already expired.';
+        END IF;
+    END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER check_if_product_came_from_same_shop
+    BEFORE INSERT
+    ON TransactionProductLog
+    FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (SELECT 1
+                   FROM TransactionProductLog,
+                        Product
+                   WHERE TransactionProductLog.transaction_uuid = NEW.transaction_uuid
+                     and TransactionProductLog.product_uuid = Product.product_uuid
+                     and Product.shop_uuid = (SELECT shop_uuid
+                                              FROM Product
+                                              WHERE product_uuid = NEW.product_uuid))
+        AND (SELECT 1
+             FROM TransactionProductLog
+             WHERE transaction_uuid = NEW.transaction_uuid)
+    THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'This product does not belong to the same shop as the transaction';
+    END IF;
+END;
+//
+\end{lstlisting}
 \newpage
 \NormalFont
 \subsection{Estimate Size of Each Table}
 \begin{table}[h]
+    \renewcommand{\arraystretch}{1.35}
     \begin{tabular}{|p{5cm}|p{2cm}|p{2.5cm}|c|}
         \hline
         \textbf{Name} & \textbf{Columns} & \textbf{Rows (Est.)} & \textbf{Size (Est.)} \\
@@ -822,6 +1163,8 @@ values  ('abc123-8998-11ee-bb92-42010aae0002', '1a234567-8998-11ee-bb92-42010aae
         \hline
         coupon & 5 & 9 & 8192 bytes \\
         \hline
+        hateList & 3 & 25 & 58kB \\
+        \hline
     \end{tabular}
     \caption{Database Size Estimation}
     \label{tab:database-size-estimation}
@@ -829,6 +1172,7 @@ values  ('abc123-8998-11ee-bb92-42010aae0002', '1a234567-8998-11ee-bb92-42010aae
 
 \subsection{Estimated Number of Database Operation per Day}
 \begin{table}[h]
+    \renewcommand{\arraystretch}{1.35}
     \begin{tabular}{|p{5cm}|p{7cm}|}
         \hline
         \textbf{Table} & \textbf{Estimated Operations per Day} \\
@@ -849,29 +1193,82 @@ values  ('abc123-8998-11ee-bb92-42010aae0002', '1a234567-8998-11ee-bb92-42010aae
         \hline
         \texttt{coupon} & N/A (Not mentioned in scenarios) \\
         \hline
+        \texttt{hateList} & 50 CP Reads \\
+        \hline
     \end{tabular}
     \caption{Estimated Number of Database Operations per Day}
     \label{tab:estimated-database-operations}
 \end{table}
 \newpage
+\section{系統使用手冊(The User Guide of the System)}
 \subsection{User Interface}
 \begin{center}
-\includegraphics[scale=0.4]{ui/SignInPage.png}
-\includegraphics[scale=0.4]{ui/SignUpPage.png}
-\includegraphics[scale=0.4]{ui/MainPage.png}
-\includegraphics[scale=0.4]{ui/AccountSettingPage1.png}
-\includegraphics[scale=0.4]{ui/AccountSettingPage2.png}
-\includegraphics[scale=0.4]{ui/AccountSettingPage3.png}
-\includegraphics[scale=0.4]{ui/ShopManagerPage.png}
+\includegraphics[scale=0.3]{ui/signup.png}
+\includegraphics[scale=0.3]{ui/login.png}
+\includegraphics[scale=0.3]{ui/accountSettingAll.png}
+\includegraphics[scale=0.3]{ui/accountSettingOrder.png}
+\includegraphics[scale=0.3]{ui/accountSettingShop.png}
+\includegraphics[scale=0.3]{ui/accountSettingSubscribtion.png}
+\includegraphics[scale=0.3]{ui/adminPage.png}
+\includegraphics[scale=0.3]{ui/mainPage.png}
+\includegraphics[scale=0.3]{ui/shopManagerBuyer.png}
+\includegraphics[scale=0.3]{ui/shopManagerSeller.png}
+\includegraphics[scale=0.3]{ui/productDetail.png}
+\includegraphics[scale=0.3]{ui/shoppingCart.png}
+\includegraphics[scale=0.3]{ui/checkoutPage.png}
+\includegraphics[scale=0.3]{ui/subscription.png}
+
+
+
 \end{center}
 \newpage
-\section{Glossary}
+\section{額外的查詢和觀點(Additional Queries and Views)}
+\includegraphics[scale=0.35]{view/view1.png}
+\includegraphics[scale=0.35]{view/view2.png}
+
+\section{結論和未來展望(Conclusions and Future Work)}
+
+\begin{align}
+    
+
+線上家具選購系統（OFSS）的開發成功地將資料庫系統概念與網頁程式設計、網際網路技術以及各種程式語言結合。透過本學期資料庫系統課程的協作努力，我們團隊更深入地理解了資料庫操作和流程設計。
+
+系統的主要目標得到實現，為用戶提供了一個全面的線上家具交易平台。用戶可以輕鬆管理產品，查看銷售記錄和收入，搜尋商品，進行購買，並在訂單上留下評論和評分。
+
+主系統及其前端和後端子元件的確認確保了一種有組織且結構化的開發方法。前端組件包括商品頁面（PP）、主頁面（MP）、購物車介面（SCI）、商店頁面（SP）、帳號設定頁面（DP）、超級使用者管理頁面（AP）和登入頁面（LP），共同為用戶提供了一個用戶友好且視覺上吸引人的界面。在後端，留言控制器（CC）、商品控制器（PC）、商店控制器（SC）、訂單控制器（OC）、帳號控制器（AC）、登入控制器（SIC）和訂閱控制器（SSC）高效處理系統的核心功能。
+
+至於未來的工作，可以探索以下幾個方向以增強和擴展OFSS
+
+1. 用戶反饋和迭代改進： 通過調查或分析工具收集用戶反饋，找出需要改進的地方。利用這些建議進行迭代改進用戶體驗，解決任何問題或缺陷。
+
+2. 安全性增強： 實施高級安全措施，保護用戶數據、交易和整個系統免受潛在威脅。定期更新和修補安全漏洞，確保安全環境。
+
+3. 整合額外功能： 探索整合其他功能，如個性化用戶建議、促銷活動和社交媒體分享功能，進一步吸引用戶，提高平台互動。
+
+4. 開發移動應用程序： 考慮開發OFSS的移動應用程序版本，以滿足偏好通過移動設備訪問平台的用戶，提供更便捷和多功能的用戶體驗。
+
+5. 性能優化： 持續監控並優化系統性能，確保在高峰使用時快速高效地響應。實施緩存機制和數據庫優化，減少加載時間。
+
+6. 國際化和本地化： 通過整合國際化和本地化功能，擴大平台的影響力，使來自不同地區的用戶能夠使用他們喜好的語言和貨幣訪問系統。
+\end{align}
 \newpage
 
-\section{References}
+\section{Glossary}
+
+\begin{thebibliography}{99}
+    \bibitem{silberschatz}
+    Abraham Silberschatz, Henry F. Korth, and S. Sudarshan,
+    \emph{Database System Concepts},
+    7th Edition, McGraw Hill, 2019.
+
+    \bibitem{connolly}
+    Thomas Connolly and Carolyn Begg,
+    \emph{Database Systems: A Practical Approach to Design, Implementation, and Management},
+    6th Edition, Pearson Education Limited, 2015.
+\end{thebibliography}
 \newpage
 
 \section{Appendix}
-\newpage
+
 
 \end{document}
