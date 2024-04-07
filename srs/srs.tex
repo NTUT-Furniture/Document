@@ -106,10 +106,9 @@
 
 本系統主要目標為：
 \begin{enumerate}
-  \item 使用者可以新增、修改、更新及下架商品
-  \item 使用者可以查看商品清單、賣出紀錄及營業收入
-  \item 使用者可以搜尋商品、購買商品
-  \item 使用者可以於訂單撰寫評論、評分
+  \item 賣家可以新增、修改、更新及下架商品
+  \item 買家可以購買商品
+  \item 使用者可以查看商品清單、為商品撰寫評論
 \end{enumerate}
 
 \subsection{系統名稱 (Identification)}
@@ -132,16 +131,18 @@
   \item 留言控制器(Comment controller, CC)
   \item 商品控制器(Product controller, PC)
   \item 商店控制器(Shop controller, SC)
-  \item 訂單控制器(Order controller, OC)
+  \item 訂單控制器(Transaction controller, OC)
   \item 帳號控制器(Account controller, AC)
   \item 登入控制器(Sign in controller, SIC)
   \item 訂閱控制器(Subscription controller, SSC)
+  \item 折價券控制器(Coupon controller, CPC)
+  
 \end{enumerate}
 \subsection{概觀 (Overview)}
 在評估現代網頁設計的趨勢後，選擇前後端分離的架構，以確保應用具有最佳的性能和可擴展性。
 
-在前端方面採用HTMX。HTMX 是一個JavaScript函式庫，簡化了建立互動式Web應用的過程，保持了HTML的簡潔性；在後端方面，選擇Python作為主要的後端程式語言，並使用FastAPI框架來建構的API。FastAPI以其出色的性能和文檔生成功能而聞名，使得開發和維護API變得更加容易和高效。
-
+在前端方面採用純JS。
+在後端方面，選擇Python作為主要的後端程式語言，並使用FastAPI框架來建構的API。FastAPI以其出色的性能和文檔生成功能而聞名，使得開發和維護API變得更加容易和高效。
 在數據庫部分採用Mysql。使用docker-compose 來加速開發流程。
 
 \subsection{符號描述 (Notation Description)}
@@ -253,7 +254,7 @@
         \hline
         MUS-18 & 身為商家，我可以修改所有訂單狀況 (OC) \\
         \hline
-        MUS-19 & 身為商家，我可以發送優惠碼給訂閱用戶 (SSC) \\
+        MUS-19 & 身為商家，我可以發送優惠碼給訂閱使用者 (SSC) \\
         \hline
     \end{tabular}
     \caption{Member Operational Concepts}
@@ -274,7 +275,7 @@
         \hline
         AUS-03 & 身為超級使用者，我可以刪除帳號 (AC) \\
         \hline
-        AUS-04 & 身為超級使用者，我可以查看商店營業額 (SC) \\
+        AUS-04 & 身為超級使用者，我可以管理商店 (SC) \\
         \hline
     \end{tabular}
     \caption{Administrator Operational Concepts}
@@ -306,7 +307,7 @@
         \hline 
         OFSS-F-08 & SP 需要 SC 取得商家資訊 \\
         \hline 
-        OFSS-F-09 & SP 需要 SSC 取得已訂閱用戶 \\
+        OFSS-F-09 & SP 需要 SSC 取得已訂閱使用者 \\
         \hline 
         OFSS-F-10 & SP 需要 PC 取得商品 \\
         \hline 
@@ -353,11 +354,8 @@
         \hline
         OFSS-N-03 & 使用JWT驗證使用者 \\
         \hline
-        OFSS-N-04 & 使用fastapi-csrf-protect增加安全性 \\
+        OFSS-N-04 & 使用fastapi提供的middleware增加安全性\\
         \hline
-        OFSS-N-05 & 使用fastapi提供的middleware增加安全性\\
-        \hline
-        
     \end{tabular}
     \caption{System Requirements and Descriptions}
     \label{tab:system-requirements}
@@ -371,13 +369,13 @@
         \hline
         \textbf{Requirement} & \textbf{Description} \\
         \hline
-        OFSS-D-01 & 顧客資訊需包含user_uuid、ID、姓名、密碼、email、手機、地址及使用狀態(enable/disable) \\
+        OFSS-D-01 & 顧客資訊需包含 account_uuid、姓名、密碼、email、圖片及使用狀態(enable/disable) \\
         \hline
-        OFSS-D-02 & 商家資訊需包含store_uuid、user_uuid、名稱、簡介、訂閱者清單、商家評論、歷史訂單資訊清單及使用狀態(enable/disable) \\
+        OFSS-D-02 & 商家資訊需包含 shop_uuid、account_uuid、名稱、簡介、訂閱者清單、歷史訂單資訊清單及使用狀態(enable/disable) \\
         \hline
-        OFSS-D-03 & 商品資訊需包含item_uuid、store_uuid、名稱、簡介、價錢、圖片url(或數個)及存貨數量 \\
+        OFSS-D-03 & 商品資訊需包含 product_uuid、shop_uuid、名稱、簡介、價錢、圖片及存貨數量 \\
         \hline
-        OFSS-D-04 & 訂單資訊需包含每筆的transaction_uuid、user_uuid、每一個商品的item_uuid和交易數量、交易描述、實際交易金額及交易時間戳 \\
+        OFSS-D-04 & 訂單資訊需包含每筆的transaction_uuid、account_uuid、shop_uuid、product_uuid 和交易數量、使用折扣碼、實際交易金額及交易時間戳 \\
         \hline
     \end{tabular}
     \caption{System Requirements and Descriptions}
@@ -421,9 +419,7 @@
         \hline
         \textbf{Requirement} & \textbf{Description} \\
         \hline
-        OFSS-E-01 & 使用者透過HTTP通訊協定 \\
-        \hline
-        OFSS-E-02 & webpage使用HTMX \\
+        OFSS-E-01 & 使用者透過HTTPS通訊協定 \\
         \hline
     \end{tabular}
     \caption{System Requirements and Descriptions}
@@ -440,7 +436,7 @@
         \hline
         OFSS-I-01 & AP 能查看帳號資訊 \\
         \hline
-        OFSS-I-02 & AP 能查看商店營業資訊(e.g. 營業收入)  \\
+        OFSS-I-02 & AP 能查看商店資訊 \\
         \hline
         OFSS-I-03 & DP 能查看帳號 \\
         \hline
@@ -456,23 +452,23 @@
         \hline
         OFSS-I-09 & SP 能查看訂閱 \\
         \hline
-        OFSS-I-11 & MP 能顯示所有商品 \\
+        OFSS-I-10 & MP 能顯示所有商品 \\
         \hline
-        OFSS-I-12 & MP 能篩選所有商品 \\
+        OFSS-I-11 & MP 能篩選所有商品 \\
         \hline
-        OFSS-I-13 & SCI 能加入商品 \\
+        OFSS-I-12 & SCI 能加入商品 \\
         \hline
-        OFSS-I-14 & SCI 能送出訂單 \\
+        OFSS-I-13 & SCI 能送出訂單 \\
         \hline
-        OFSS-I-15 & SCI 能使用coupon \\
+        OFSS-I-14 & SCI 能使用coupon \\
         \hline
-        OFSS-I-16 & PP 能查看商品 \\
+        OFSS-I-15 & PP 能查看商品 \\
         \hline
-        OFSS-I-17 & PP 能查看評論 \\
+        OFSS-I-16 & PP 能查看評論 \\
         \hline
-        OFSS-I-18 & PP 能按讚評論 \\
+        OFSS-I-17 & PP 能按讚評論 \\
         \hline
-        OFSS-I-19 & LP 能登入 \\
+        OFSS-I-18 & LP 能登入 \\
         \hline
     \end{tabular}
     \caption{System Requirements and Descriptions}
@@ -661,7 +657,7 @@ create table TransactionProductLog
 
 \newpage
 \section{函數相依性與資料庫正規化(Functional Dependencies and Database Normalization)}
-\includegraphics[scale=0.7]{image/fd.png}
+\includegraphics[scale=0.5]{image/fd.png}
 \section{系統使用手冊(The User Guide of the System)}
 \subsection{Snapshots of Tables in DBMS}
 \subsubsection{Account Snapshot}
@@ -680,7 +676,7 @@ create table TransactionProductLog
 \includegraphics[scale=0.4]{snapshots/transaction.png}
 \subsubsection{TransactionProductLog Snapshot}
 \includegraphics[scale=0.4]{snapshots/transactionProductLog.png}
-
+\newpage
 \subsection{SQL Statements}
 \tiny
 \begin{lstlisting}
@@ -1163,7 +1159,7 @@ END;
         \hline
         coupon & 5 & 9 & 8192 bytes \\
         \hline
-        hateList & 3 & 25 & 58kB \\
+        hateList & 3 & 25 & 58 kB \\
         \hline
     \end{tabular}
     \caption{Database Size Estimation}
@@ -1229,27 +1225,23 @@ END;
 \section{結論和未來展望(Conclusions and Future Work)}
 
 \begin{align}
-    
 
 線上家具選購系統（OFSS）的開發成功地將資料庫系統概念與網頁程式設計、網際網路技術以及各種程式語言結合。透過本學期資料庫系統課程的協作努力，我們團隊更深入地理解了資料庫操作和流程設計。
 
-系統的主要目標得到實現，為用戶提供了一個全面的線上家具交易平台。用戶可以輕鬆管理產品，查看銷售記錄和收入，搜尋商品，進行購買，並在訂單上留下評論和評分。
+系統的主要目標得到實現，為使用者提供了一個全面的線上家具交易平台。使用者可以輕鬆管理產品，查看銷售記錄和收入，進行購買，並在訂單上留下評論。
 
-主系統及其前端和後端子元件的確認確保了一種有組織且結構化的開發方法。前端組件包括商品頁面（PP）、主頁面（MP）、購物車介面（SCI）、商店頁面（SP）、帳號設定頁面（DP）、超級使用者管理頁面（AP）和登入頁面（LP），共同為用戶提供了一個用戶友好且視覺上吸引人的界面。在後端，留言控制器（CC）、商品控制器（PC）、商店控制器（SC）、訂單控制器（OC）、帳號控制器（AC）、登入控制器（SIC）和訂閱控制器（SSC）高效處理系統的核心功能。
+主系統及其前端和後端子元件的確認確保了一種有組織且結構化的開發方法。前端組件包括商品頁面（PP）、主頁面（MP）、購物車介面（SCI）、商店頁面（SP）、帳號設定頁面（DP）、超級使用者管理頁面（AP）和登入頁面（LP），共同為使用者提供了一個使用者友好且視覺上吸引人的界面。在後端，留言控制器（CC）、商品控制器（PC）、商店控制器（SC）、訂單控制器（OC）、帳號控制器（AC）、登入控制器（SIC）和訂閱控制器（SSC）高效處理系統的核心功能。
 
 至於未來的工作，可以探索以下幾個方向以增強和擴展OFSS
 
-1. 用戶反饋和迭代改進： 通過調查或分析工具收集用戶反饋，找出需要改進的地方。利用這些建議進行迭代改進用戶體驗，解決任何問題或缺陷。
+1. 使用者回饋和滾動式修正： 通過調查或分析工具收集使用者反饋，找出需要改進的地方。利用這些建議進行迭代改進使用者體驗，解決任何問題或缺陷。
 
-2. 安全性增強： 實施高級安全措施，保護用戶數據、交易和整個系統免受潛在威脅。定期更新和修補安全漏洞，確保安全環境。
+2. 安全性增強： 實施高級安全措施，保護使用者數據、交易和整個系統免受潛在威脅。定期更新和修補安全漏洞，確保安全環境。
 
-3. 整合額外功能： 探索整合其他功能，如個性化用戶建議、促銷活動和社交媒體分享功能，進一步吸引用戶，提高平台互動。
+3. 整合額外功能： 探索整合其他功能，如個性化使用者建議、促銷活動和社交媒體分享功能，進一步吸引使用者，提高平台互動。
 
-4. 開發移動應用程序： 考慮開發OFSS的移動應用程序版本，以滿足偏好通過移動設備訪問平台的用戶，提供更便捷和多功能的用戶體驗。
+4. 性能最佳化： 持續監控並最佳化系統性能，確保在高峰使用時快速高效地響應。實施緩衝機制和數據庫最佳化，減少讀取時間。
 
-5. 性能優化： 持續監控並優化系統性能，確保在高峰使用時快速高效地響應。實施緩存機制和數據庫優化，減少加載時間。
-
-6. 國際化和本地化： 通過整合國際化和本地化功能，擴大平台的影響力，使來自不同地區的用戶能夠使用他們喜好的語言和貨幣訪問系統。
 \end{align}
 \newpage
 
